@@ -18,7 +18,7 @@ venv.bak/
 *.pot
 *.pyc
 __pycache__/
-static/
+
 
 
 # Clever link to deployed application
