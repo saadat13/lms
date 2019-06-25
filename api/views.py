@@ -215,7 +215,6 @@ class DocumentDetailAPIView(mixins.DestroyModelMixin,
 ################################################### Message
 
 
-
 class MessageAPIView(mixins.CreateModelMixin, ListAPIView):
     # permission_classes   = [permissions.IsAuthenticatedOrReadOnly]
     # authentication_classes = [SessionAuthentication]
@@ -230,8 +229,6 @@ class MessageAPIView(mixins.CreateModelMixin, ListAPIView):
 
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
-
-
 
 
 class MessageDetailAPIView(mixins.DestroyModelMixin,
@@ -250,7 +247,6 @@ class MessageDetailAPIView(mixins.DestroyModelMixin,
             dep_name=self.kwargs['dep_name']).first().course_set.all().filter(
             name=self.kwargs['course_name']).first().section_set.filter(id=self.kwargs['id']).first().message_set.filter(
             id=self.kwargs['i']).first())
-
 
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
@@ -280,7 +276,6 @@ class VideoAPIView(mixins.CreateModelMixin, ListAPIView):
         return self.create(request, *args, **kwargs)
 
 
-
 class VideoDetailView(mixins.DestroyModelMixin,
                       mixins.UpdateModelMixin,
                       mixins.CreateModelMixin,
@@ -304,7 +299,6 @@ class VideoDetailView(mixins.DestroyModelMixin,
 ################################################### Homework
 
 
-
 class HomeworkAPIView(mixins.CreateModelMixin, ListAPIView):
     # permission_classes   = [permissions.IsAuthenticatedOrReadOnly]
     # authentication_classes = [SessionAuthentication]
@@ -319,7 +313,6 @@ class HomeworkAPIView(mixins.CreateModelMixin, ListAPIView):
 
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
-
 
 
 class HomeworkDetailView(mixins.DestroyModelMixin,
@@ -343,7 +336,6 @@ class HomeworkDetailView(mixins.DestroyModelMixin,
 ################################################### Solution
 
 
-
 class SolutionAPIView(mixins.CreateModelMixin, ListAPIView):
     # permission_classes   = [permissions.IsAuthenticatedOrReadOnly]
     # authentication_classes = [SessionAuthentication]
@@ -356,10 +348,8 @@ class SolutionAPIView(mixins.CreateModelMixin, ListAPIView):
             name=self.kwargs['course_name']).first() \
             .section_set.filter(id=self.kwargs['id']).first().homework_set.filter(id=self.kwargs['i']).first().solution_set.all()
 
-
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
-
 
 
 class SolutionDetailView(mixins.DestroyModelMixin,
@@ -378,7 +368,7 @@ class SolutionDetailView(mixins.DestroyModelMixin,
             dep_name=self.kwargs['dep_name']).first().course_set.all().filter(
             name=self.kwargs['course_name']).first()
                                  .section_set.filter(id=self.kwargs['id']).first()
-                                 .homework_set.filter(id=self.kwargs['i']).first().solution_set.filter(id=self.kwargs['si']))
+                                 .homework_set.filter(id=self.kwargs['i']).first().solution_set.filter(id=self.kwargs['si']).distinct())
 
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)

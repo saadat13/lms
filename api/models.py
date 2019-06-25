@@ -150,7 +150,7 @@ class Video(models.Model):
 
 class Message(models.Model):
     id = models.AutoField(primary_key=True, null=False)
-    sender = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    sender_name = models.CharField(max_length=100, default="undefined")
     section = models.ForeignKey(Section, on_delete=models.CASCADE)
     title = models.CharField(max_length=300)
     content = models.TextField()
@@ -171,7 +171,6 @@ def id_generator(instance,college_name ,department_name, course_name, section_id
         else:
             return 1
     return instance.id
-
 
 
 def upload_homework_question_to(instance, name):
@@ -219,7 +218,7 @@ class Homework(models.Model):
 
 
 def upload_solution_to(instance, name):
-    col_name = instance.section.course.department.college.college_name
+    col_name = instance.homework.section.course.department.college.college_name
     dn = instance.homework.section.course.department.dep_name
     course_name = instance.homework.section.course.name
     section_id = instance.homework.section.id

@@ -71,18 +71,13 @@ class SectionSerializer(serializers.ModelSerializer):
 
 
 class HomeworkSerializer(serializers.ModelSerializer):
-    section_id = serializers.SerializerMethodField(read_only=True)
-
-    @staticmethod
-    def get_section_id(self):
-        return self.section_id
 
     class Meta:
         model = Homework
         fields=[
             'id',
             'title',
-            'section_id',
+            'section',
             'question_file',
             'grades_file',
             'solution_file',
@@ -91,31 +86,14 @@ class HomeworkSerializer(serializers.ModelSerializer):
 
 class SolutionSerializer(serializers.ModelSerializer):
 
-    deliver_time = serializers.SerializerMethodField(read_only=True)
-    homework_id = serializers.SerializerMethodField(read_only=True)
-    student_id  = serializers.SerializerMethodField(read_only=True)
-
-    @staticmethod
-    def get_deliver_time(self):
-        return self.deliverTime
-
-    @staticmethod
-    def get_student_id(self):
-        return self.student.id
-
-    @staticmethod
-    def get_homework_id(self):
-        return self.homework.id
-
-
     class Meta:
         model = Solution
         fields = [
             'id',
-            'student_id',
-            'homework_id',
+            'student',
+            'homework',
             'file',
-            'deliver_time',
+            'deliverTime',
         ]
 
 
@@ -126,51 +104,31 @@ class DocumentSerializer(serializers.ModelSerializer):
         fields=[
             'id',
             'title',
-            'section',
             'file',
         ]
 
 
 class MessageSerializer(serializers.ModelSerializer):
-    sender_name = serializers.SerializerMethodField(read_only=True)
-    section_id = serializers.SerializerMethodField(read_only=True)
-
-    @staticmethod
-    def get_section_id(self):
-        return self.section_id
-
-    @staticmethod
-    def get_sender_name(self):
-        sender = self.sender
-        if sender is not None:
-            name = "%s %s"%(sender.firstName, sender.lastName)
-            return name
-        return "undefined"
 
     class Meta:
         model = Message
         fields=[
             'id',
             'title',
+            'section',
             'sender_name',
-            'section_id',
             'content'
         ]
 
 
 class VideoSerializer(serializers.ModelSerializer):
-    section_id = serializers.SerializerMethodField(read_only=True)
-
-    @staticmethod
-    def get_section_id(self):
-        return self.section_id
 
     class Meta:
         model = Video
         fields=[
             'id',
             'title',
-            'section_id',
+            'section',
             'file',
         ]
 
