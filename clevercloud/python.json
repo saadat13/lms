@@ -1,9 +1,10 @@
 {
     "build": {
-        "folder": "lms"
+        "folder": "lms",
+        "cache_dependencies": true
     },
     "deploy": {
-        "module": "lms.wsgi:application",
+        "module": "lms:wsgi",
         "static": "/clevercloud/static/"
     }
 }
