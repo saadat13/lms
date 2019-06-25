@@ -1,5 +1,3 @@
-import traceback
-
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 import datetime
@@ -115,11 +113,12 @@ class Section(models.Model):
 
 
 def upload_document_to(instance, name):
+    col_name = instance.section.course.department.college.college_name
     dep_name = instance.section.course.department.dep_name
     course_name = instance.section.course.name
     section_id = instance.section.id
-    year = instance.section.year
-    return "media/%s/courses/%s/%d/sections/%d/documents/%s" % (dep_name, course_name,year, section_id, name)
+    #year = instance.section.year
+    return "media/colleges/%s/departments/%s/courses/%s/sections/%d/documents/%s" % (col_name, dep_name, course_name, section_id, name)
 
 
 class Document(models.Model):
@@ -133,11 +132,12 @@ class Document(models.Model):
 
 
 def upload_video_to(instance, name):
+    col_name = instance.section.course.department.college.college_name
     dep_name = instance.section.course.department.dep_name
     course_name = instance.section.course.name
     section_id = instance.section.id
-    year = instance.section.year
-    return "media/%s/courses/%s/%d/sections/%d/videos/%s" % (dep_name, course_name,year, section_id, name)
+    #year = instance.section.year
+    return "media/colleges/%s/departments/%s/courses/%s/sections/%d/videos/%s" % (col_name, dep_name, course_name, section_id, name)
 
 
 class Video(models.Model):
@@ -159,8 +159,8 @@ class Message(models.Model):
         return "%s: %s..."%(self.title, self.content[:20])
 
 
-def id_generator(instance, department_name, course_name, year, section_id):
-    directory = "media/%s/courses/%s/%d/sections/%d/homeworks/" % (department_name, course_name, year, section_id)
+def id_generator(instance,college_name ,department_name, course_name, section_id):
+    directory = "media/colleges/%s/departments/%s/courses/%s/sections/%d/homeworks/" % (college_name, department_name, course_name, section_id)
     if not os.path.exists(directory):
         os.makedirs(directory)
     if instance.id is None:
@@ -175,31 +175,34 @@ def id_generator(instance, department_name, course_name, year, section_id):
 
 
 def upload_homework_question_to(instance, name):
+    col_name = instance.section.course.department.college.college_name
     dn = instance.section.course.department.dep_name
     course_name = instance.section.course.name
     section_id = instance.section.id
-    year = instance.section.year
-    homework_id = id_generator(instance, dn, course_name, year, section_id)
-    return "media/%s/courses/%s/%d/sections/%d/homeworks/%d/questions/%s/" % (dn, course_name, year, section_id, homework_id, name)
+    # year = instance.section.year
+    homework_id = id_generator(instance,col_name,dn, course_name, section_id)
+    return "media/colleges/%s/departments/%s/courses/%s/sections/%d/homeworks/%d/questions/%s/" % (col_name, dn, course_name, section_id, homework_id, name)
     # return "media/question/%s"%name
 
 
 def upload_homework_solution_to(instance, name):
+    col_name = instance.section.course.department.college.college_name
     dn = instance.section.course.department.dep_name
     course_name = instance.section.course.name
     section_id = instance.section.id
-    year = instance.section.year
-    homework_id = id_generator(instance, dn, course_name, year, section_id)
-    return "media/%s/courses/%s/%d/sections/%d/homeworks/%d/final solution/%s" % (dn, course_name, year, section_id, homework_id, name)
+    # year = instance.section.year
+    homework_id = id_generator(instance, col_name, dn, course_name, section_id)
+    return "media/colleges/%s/departments/%s/courses/%s/sections/%d/homeworks/%d/final solution/%s" % (col_name, dn, course_name, section_id, homework_id, name)
 
 
 def upload_homework_grades_to(instance, name):
+    col_name = instance.section.course.department.college.college_name
     dn = instance.section.course.department.dep_name
     course_name = instance.section.course.name
     section_id = instance.section.id
-    year = instance.section.year
-    homework_id = id_generator(instance, dn, course_name, year, section_id)
-    return "media/%s/courses/%s/%d/sections/%d/homeworks/%d/grades/%s" % (dn, course_name,year, section_id, homework_id,name)
+    # year = instance.section.year
+    homework_id = id_generator(instance, col_name, dn, course_name, section_id)
+    return "media/colleges/%s/departments/%s/courses/%s/sections/%d/homeworks/%d/grades/%s" % (col_name, dn, course_name, section_id, homework_id, name)
 
 
 class Homework(models.Model):
@@ -212,16 +215,17 @@ class Homework(models.Model):
     # /media/departmentNameself/courses/courseName/sections/sectionId/homeworks
 
     def __str__(self):
-        return self.title + str(self.id)
+        return self.title
 
 
 def upload_solution_to(instance, name):
+    col_name = instance.section.course.department.college.college_name
     dn = instance.homework.section.course.department.dep_name
     course_name = instance.homework.section.course.name
     section_id = instance.homework.section.id
-    year = instance.homework.section.year
+    # year = instance.homework.section.year
     homework_id = instance.homework.id
-    return "media/%s/courses/%s/%d/sections/%d/homeworks/%d/solutions/%s" % (dn, course_name,year, section_id, homework_id, name)
+    return "media/colleges/%s/departments/%s/courses/%s/sections/%d/homeworks/%d/solutions/%s" % (col_name, dn, course_name, section_id, homework_id, name)
 
 
 class Solution(models.Model):

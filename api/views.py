@@ -1,18 +1,58 @@
+from django.http import HttpResponse, Http404
 from django.shortcuts import get_object_or_404
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from gunicorn.http.wsgi import FileWrapper
 from rest_framework import mixins, generics
 from rest_framework.generics import ListAPIView
-
+import magic
 
 from .serializers import CourseSerializer, CollegeSerializer, DepartmentSerializer, SectionSerializer, \
     SolutionSerializer, HomeworkSerializer, DocumentSerializer, VideoSerializer, MessageSerializer
 from .models import Course, College, Department, Section, Solution, Document, Video, Homework, Message
 
 
+import os
+from django.conf import settings
+import json
+from django.http import HttpResponse, Http404
+
+def is_json(data):
+    try:
+        json_data = json.loads(data)
+        is_valid = True
+    except ValueError:
+        is_valid = False
+    return is_valid
+
+
+@method_decorator(csrf_exempt)
+def download(request):
+    # # if is_json(request.body):
+    req_dict = json.loads(request.body)
+    try:
+        file_path = req_dict['path']
+        strs = str(file_path).split("/")
+        file_name = strs[len(strs)-1]
+        mim = magic.Magic(mime=True)
+        file_type = mim.from_file(file_path)
+        if os.path.exists(file_path):
+            with open(file_path, 'rb') as fh:
+                response = HttpResponse(fh.read(), content_type=file_type)
+                response['Content-Disposition'] = 'attachment; filename="%s"' % file_name
+                return response
+        else:
+            return HttpResponse("does not exists!")
+    except Exception as e:
+        return HttpResponse(str(e))
+
+
+
 ################################################### College
 
 
 class CollegeAPIView(mixins.CreateModelMixin,
-                    ListAPIView):
+                     ListAPIView):
     # permission_classes   = [permissions.IsAuthenticatedOrReadOnly]
     # authentication_classes = [SessionAuthentication]
     serializer_class = CollegeSerializer
@@ -20,9 +60,9 @@ class CollegeAPIView(mixins.CreateModelMixin,
 
 
 class CollegeDetailAPIView(mixins.DestroyModelMixin,
-                        mixins.UpdateModelMixin,
-                        mixins.CreateModelMixin,
-                        generics.RetrieveAPIView):
+                           mixins.UpdateModelMixin,
+                           mixins.CreateModelMixin,
+                           generics.RetrieveAPIView):
     # permission_classes   = []
     # authentication_classes = []
     serializer_class = CollegeSerializer
@@ -37,7 +77,7 @@ class CollegeDetailAPIView(mixins.DestroyModelMixin,
 
 
 class DepartmentAPIView(mixins.CreateModelMixin,
-                    ListAPIView):
+                        ListAPIView):
     # permission_classes   = [permissions.IsAuthenticatedOrReadOnly]
     # authentication_classes = [SessionAuthentication]
     serializer_class = DepartmentSerializer
@@ -48,9 +88,9 @@ class DepartmentAPIView(mixins.CreateModelMixin,
 
 
 class DepartmentDetailAPIView(mixins.DestroyModelMixin,
-                        mixins.UpdateModelMixin,
-                        mixins.CreateModelMixin,
-                        generics.RetrieveAPIView):
+                              mixins.UpdateModelMixin,
+                              mixins.CreateModelMixin,
+                              generics.RetrieveAPIView):
     # permission_classes   = []
     # authentication_classes = []
     serializer_class = DepartmentSerializer
@@ -72,14 +112,14 @@ class CourseAPIView(mixins.CreateModelMixin,
     #
 
     def get_queryset(self):
-        return College.objects.filter(college_name__iexact=self.kwargs['college_name'])\
-        .first().department_set.filter(dep_name=self.kwargs['dep_name']).first().course_set.all()
+        return College.objects.filter(college_name__iexact=self.kwargs['college_name']) \
+            .first().department_set.filter(dep_name=self.kwargs['dep_name']).first().course_set.all()
 
 
 class CourseDetailAPIView(mixins.DestroyModelMixin,
-                        mixins.UpdateModelMixin,
-                        mixins.CreateModelMixin,
-                        generics.RetrieveAPIView):
+                          mixins.UpdateModelMixin,
+                          mixins.CreateModelMixin,
+                          generics.RetrieveAPIView):
     # permission_classes   = []
     # authentication_classes = []
     serializer_class = CourseSerializer
@@ -87,14 +127,14 @@ class CourseDetailAPIView(mixins.DestroyModelMixin,
     lookup_field     = 'course_name'
 
     def get_object(self):
-        return get_object_or_404(College.objects.filter(college_name__iexact=self.kwargs['college_name'])\
-        .first().department_set.filter(dep_name=self.kwargs['dep_name']).first().course_set.all().filter(name=self.kwargs['course_name']).distinct())
+        return get_object_or_404(College.objects.filter(college_name__iexact=self.kwargs['college_name']) \
+                                 .first().department_set.filter(dep_name=self.kwargs['dep_name']).first().course_set.all().filter(name=self.kwargs['course_name']).distinct())
     #
 ################################################### Section
 
 
 class SectionAPIView(mixins.CreateModelMixin,
-                    ListAPIView):
+                     ListAPIView):
     # permission_classes   = [permissions.IsAuthenticatedOrReadOnly]
     # authentication_classes = [SessionAuthentication]
     serializer_class = SectionSerializer
@@ -102,15 +142,15 @@ class SectionAPIView(mixins.CreateModelMixin,
 
     def get_queryset(self):
         return College.objects.filter(college_name__iexact=self.kwargs['college_name']) \
-                                 .first().department_set.filter(
+            .first().department_set.filter(
             dep_name=self.kwargs['dep_name']).first().course_set.all().filter(
             name=self.kwargs['course_name']).first().section_set.all()
 
 
 class SectionDetailAPIView(mixins.DestroyModelMixin,
-                        mixins.UpdateModelMixin,
-                        mixins.CreateModelMixin,
-                        generics.RetrieveAPIView):
+                           mixins.UpdateModelMixin,
+                           mixins.CreateModelMixin,
+                           generics.RetrieveAPIView):
     # permission_classes   = []
     # authentication_classes = []
     serializer_class = SectionSerializer
@@ -118,15 +158,14 @@ class SectionDetailAPIView(mixins.DestroyModelMixin,
     lookup_field     = 'id'
 
     def get_object(self):
-        return get_object_or_404(College.objects.filter(college_name__iexact=self.kwargs['college_name'])\
-            .first().department_set.filter(dep_name=self.kwargs['dep_name']).first().course_set.all().filter(
+        return get_object_or_404(College.objects.filter(college_name__iexact=self.kwargs['college_name']) \
+                                 .first().department_set.filter(dep_name=self.kwargs['dep_name']).first().course_set.all().filter(
             name=self.kwargs['course_name']).first().section_set.filter(id=self.kwargs['id']).distinct())
 
 
 
 
 ################################################### Department
-
 
 
 class DocumentAPIView(mixins.CreateModelMixin, ListAPIView):
@@ -136,9 +175,9 @@ class DocumentAPIView(mixins.CreateModelMixin, ListAPIView):
     queryset = Document.objects.all()
 
     def get_queryset(self):
-        return College.objects.filter(college_name__iexact=self.kwargs['college_name'])\
+        return College.objects.filter(college_name__iexact=self.kwargs['college_name']) \
             .first().department_set.filter(dep_name=self.kwargs['dep_name']).first().course_set.all().filter(
-            name=self.kwargs['course_name']).first()\
+            name=self.kwargs['course_name']).first() \
             .section_set.filter(id=self.kwargs['id']).first().document_set.all()
 
     def post(self, request, *args, **kwargs):
@@ -146,19 +185,19 @@ class DocumentAPIView(mixins.CreateModelMixin, ListAPIView):
 
 
 class DocumentDetailAPIView(mixins.DestroyModelMixin,
-                        mixins.UpdateModelMixin,
-                        mixins.CreateModelMixin,
-                        generics.RetrieveAPIView):
+                            mixins.UpdateModelMixin,
+                            mixins.CreateModelMixin,
+                            generics.RetrieveAPIView):
     # permission_classes   = [permissions.IsAuthenticatedOrReadOnly]
     # authentication_classes = [SessionAuthentication]
     serializer_class = DocumentSerializer
     queryset = Document.objects.all()
 
     def get_object(self):
-        return get_object_or_404(College.objects.filter(college_name__iexact=self.kwargs['college_name'])\
-            .first().department_set.filter(dep_name=self.kwargs['dep_name']).first().course_set.all().filter(
+        return get_object_or_404(College.objects.filter(college_name__iexact=self.kwargs['college_name']) \
+                                 .first().department_set.filter(dep_name=self.kwargs['dep_name']).first().course_set.all().filter(
             name=self.kwargs['course_name']).first()
-            .section_set.filter(id=self.kwargs['id']).first().document_set.filter(id=self.kwargs['i']).distinct())
+                                 .section_set.filter(id=self.kwargs['id']).first().document_set.filter(id=self.kwargs['i']).distinct())
 
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
@@ -184,9 +223,9 @@ class MessageAPIView(mixins.CreateModelMixin, ListAPIView):
     queryset = Message.objects.all()
 
     def get_queryset(self):
-        return College.objects.filter(college_name__iexact=self.kwargs['college_name'])\
+        return College.objects.filter(college_name__iexact=self.kwargs['college_name']) \
             .first().department_set.filter(dep_name=self.kwargs['dep_name']).first().course_set.all().filter(
-            name=self.kwargs['course_name']).first()\
+            name=self.kwargs['course_name']).first() \
             .section_set.filter(id=self.kwargs['id']).first().message_set.all()
 
     def post(self, request, *args, **kwargs):
@@ -196,9 +235,9 @@ class MessageAPIView(mixins.CreateModelMixin, ListAPIView):
 
 
 class MessageDetailAPIView(mixins.DestroyModelMixin,
-                        mixins.UpdateModelMixin,
-                        mixins.CreateModelMixin,
-                        generics.RetrieveAPIView):
+                           mixins.UpdateModelMixin,
+                           mixins.CreateModelMixin,
+                           generics.RetrieveAPIView):
     # permission_classes   = []
     # authentication_classes = []
     serializer_class = MessageSerializer
@@ -232,9 +271,9 @@ class VideoAPIView(mixins.CreateModelMixin, ListAPIView):
     queryset = Video.objects.all()
 
     def get_queryset(self):
-        return College.objects.filter(college_name__iexact=self.kwargs['college_name'])\
+        return College.objects.filter(college_name__iexact=self.kwargs['college_name']) \
             .first().department_set.filter(dep_name=self.kwargs['dep_name']).first().course_set.all().filter(
-            name=self.kwargs['course_name']).first()\
+            name=self.kwargs['course_name']).first() \
             .section_set.filter(id=self.kwargs['id']).first().video_set.all()
 
     def post(self, request, *args, **kwargs):
@@ -243,9 +282,9 @@ class VideoAPIView(mixins.CreateModelMixin, ListAPIView):
 
 
 class VideoDetailView(mixins.DestroyModelMixin,
-                        mixins.UpdateModelMixin,
-                        mixins.CreateModelMixin,
-                        generics.RetrieveAPIView):
+                      mixins.UpdateModelMixin,
+                      mixins.CreateModelMixin,
+                      generics.RetrieveAPIView):
     # permission_classes   = []
     # authentication_classes = []
     serializer_class = VideoSerializer
@@ -273,9 +312,9 @@ class HomeworkAPIView(mixins.CreateModelMixin, ListAPIView):
     queryset = Homework.objects.all()
 
     def get_queryset(self):
-        return College.objects.filter(college_name__iexact=self.kwargs['college_name'])\
+        return College.objects.filter(college_name__iexact=self.kwargs['college_name']) \
             .first().department_set.filter(dep_name=self.kwargs['dep_name']).first().course_set.all().filter(
-            name=self.kwargs['course_name']).first()\
+            name=self.kwargs['course_name']).first() \
             .section_set.filter(id=self.kwargs['id']).first().homework_set.all()
 
     def post(self, request, *args, **kwargs):
@@ -284,9 +323,9 @@ class HomeworkAPIView(mixins.CreateModelMixin, ListAPIView):
 
 
 class HomeworkDetailView(mixins.DestroyModelMixin,
-                        mixins.UpdateModelMixin,
-                        mixins.CreateModelMixin,
-                        generics.RetrieveAPIView):
+                         mixins.UpdateModelMixin,
+                         mixins.CreateModelMixin,
+                         generics.RetrieveAPIView):
     # permission_classes   = []
     # authentication_classes = []
     serializer_class = HomeworkSerializer
@@ -298,7 +337,7 @@ class HomeworkDetailView(mixins.DestroyModelMixin,
                                  .first().department_set.filter(
             dep_name=self.kwargs['dep_name']).first().course_set.all().filter(
             name=self.kwargs['course_name']).first()
-            .section_set.filter(id=self.kwargs['id']).first().homework_set.filter(
+                                 .section_set.filter(id=self.kwargs['id']).first().homework_set.filter(
             id=self.kwargs['i']).distinct())
 
 ################################################### Solution
@@ -312,9 +351,9 @@ class SolutionAPIView(mixins.CreateModelMixin, ListAPIView):
     queryset = Solution.objects.all()
 
     def get_queryset(self):
-        return College.objects.filter(college_name__iexact=self.kwargs['college_name'])\
+        return College.objects.filter(college_name__iexact=self.kwargs['college_name']) \
             .first().department_set.filter(dep_name=self.kwargs['dep_name']).first().course_set.all().filter(
-            name=self.kwargs['course_name']).first()\
+            name=self.kwargs['course_name']).first() \
             .section_set.filter(id=self.kwargs['id']).first().homework_set.filter(id=self.kwargs['i']).first().solution_set.all()
 
 
@@ -324,9 +363,9 @@ class SolutionAPIView(mixins.CreateModelMixin, ListAPIView):
 
 
 class SolutionDetailView(mixins.DestroyModelMixin,
-                        mixins.UpdateModelMixin,
-                        mixins.CreateModelMixin,
-                        generics.RetrieveAPIView):
+                         mixins.UpdateModelMixin,
+                         mixins.CreateModelMixin,
+                         generics.RetrieveAPIView):
     # permission_classes   = []
     # authentication_classes = []
     serializer_class = SolutionSerializer
@@ -335,11 +374,11 @@ class SolutionDetailView(mixins.DestroyModelMixin,
 
     def get_object(self):
         return get_object_or_404(College.objects.filter(college_name__iexact=self.kwargs['college_name']) \
-                                    .first().department_set.filter(
-                                    dep_name=self.kwargs['dep_name']).first().course_set.all().filter(
-                                    name=self.kwargs['course_name']).first()
-                                    .section_set.filter(id=self.kwargs['id']).first()
-                                    .homework_set.filter(id=self.kwargs['i']).first().solution_set.filter(id=self.kwargs['si']))
+                                 .first().department_set.filter(
+            dep_name=self.kwargs['dep_name']).first().course_set.all().filter(
+            name=self.kwargs['course_name']).first()
+                                 .section_set.filter(id=self.kwargs['id']).first()
+                                 .homework_set.filter(id=self.kwargs['i']).first().solution_set.filter(id=self.kwargs['si']))
 
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
@@ -349,5 +388,4 @@ class SolutionDetailView(mixins.DestroyModelMixin,
 
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
-
 
