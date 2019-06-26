@@ -1,11 +1,14 @@
-from django.http import HttpResponse, Http404
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
-from gunicorn.http.wsgi import FileWrapper
-from rest_framework import mixins, generics
+from rest_framework import mixins as rest_mixins , generics
+# from . import mixins
 from rest_framework.generics import ListAPIView
 import magic
+from django.core import serializers
+
+from django.http import JsonResponse
+from rest_framework.response import Response
 
 from .serializers import CourseSerializer, CollegeSerializer, DepartmentSerializer, SectionSerializer, \
     SolutionSerializer, HomeworkSerializer, DocumentSerializer, VideoSerializer, MessageSerializer
@@ -13,7 +16,6 @@ from .models import Course, College, Department, Section, Solution, Document, Vi
 
 
 import os
-from django.conf import settings
 import json
 from django.http import HttpResponse, Http404
 
@@ -28,7 +30,7 @@ def is_json(data):
 
 @method_decorator(csrf_exempt)
 def download(request):
-    # # if is_json(request.body):
+    # if is_json(request.body):
     req_dict = json.loads(request.body)
     try:
         file_path = req_dict['path']
@@ -49,19 +51,27 @@ def download(request):
 
 
 ################################################### College
+import pickle
 
-
-class CollegeAPIView(mixins.CreateModelMixin,
+class CollegeAPIView(rest_mixins.CreateModelMixin,
                      ListAPIView):
     # permission_classes   = [permissions.IsAuthenticatedOrReadOnly]
     # authentication_classes = [SessionAuthentication]
     serializer_class = CollegeSerializer
     queryset         = College.objects.all()
 
+    # def list(self, request, *args, **kwargs):
+    #     # Note the use of `get_queryset()` instead of `self.queryset`
+    #     colleges = list(College.objects.all())
+    #     print(pickle.loads())
+    #     # college_json = {"colleges":colleges}
+    #     # print(college_json)
+    #     return HttpResponse(colleges)
 
-class CollegeDetailAPIView(mixins.DestroyModelMixin,
-                           mixins.UpdateModelMixin,
-                           mixins.CreateModelMixin,
+
+class CollegeDetailAPIView(rest_mixins.DestroyModelMixin,
+                           rest_mixins.UpdateModelMixin,
+                           rest_mixins.CreateModelMixin,
                            generics.RetrieveAPIView):
     # permission_classes   = []
     # authentication_classes = []
@@ -70,13 +80,13 @@ class CollegeDetailAPIView(mixins.DestroyModelMixin,
     lookup_field     = 'college_name'
 
     def get_object(self):
-        return get_object_or_404(College.objects.filter(college_name=self.kwargs['college_name']).distinct())
-
+        q = College.objects.filter(college_name=self.kwargs['college_name']).distinct()
+        return get_object_or_404(q)
 
 ################################################### Department
 
 
-class DepartmentAPIView(mixins.CreateModelMixin,
+class DepartmentAPIView(rest_mixins.CreateModelMixin,
                         ListAPIView):
     # permission_classes   = [permissions.IsAuthenticatedOrReadOnly]
     # authentication_classes = [SessionAuthentication]
@@ -84,12 +94,15 @@ class DepartmentAPIView(mixins.CreateModelMixin,
     queryset         = Department.objects.all()
 
     def get_queryset(self):
-        return College.objects.filter(college_name__iexact=self.kwargs['college_name']).first().department_set.all()
+        try:
+            return College.objects.filter(college_name__iexact=self.kwargs['college_name']).first().department_set.all()
+        except Exception as e:
+            return JsonResponse({'error':str(e)})
 
 
-class DepartmentDetailAPIView(mixins.DestroyModelMixin,
-                              mixins.UpdateModelMixin,
-                              mixins.CreateModelMixin,
+class DepartmentDetailAPIView(rest_mixins.DestroyModelMixin,
+                              rest_mixins.UpdateModelMixin,
+                              rest_mixins.CreateModelMixin,
                               generics.RetrieveAPIView):
     # permission_classes   = []
     # authentication_classes = []
@@ -103,7 +116,7 @@ class DepartmentDetailAPIView(mixins.DestroyModelMixin,
 ################################################### Course
 
 
-class CourseAPIView(mixins.CreateModelMixin,
+class CourseAPIView(rest_mixins.CreateModelMixin,
                     ListAPIView):
     # permission_classes   = [permissions.IsAuthenticatedOrReadOnly]
     # authentication_classes = [SessionAuthentication]
@@ -116,9 +129,9 @@ class CourseAPIView(mixins.CreateModelMixin,
             .first().department_set.filter(dep_name=self.kwargs['dep_name']).first().course_set.all()
 
 
-class CourseDetailAPIView(mixins.DestroyModelMixin,
-                          mixins.UpdateModelMixin,
-                          mixins.CreateModelMixin,
+class CourseDetailAPIView(rest_mixins.DestroyModelMixin,
+                          rest_mixins.UpdateModelMixin,
+                          rest_mixins.CreateModelMixin,
                           generics.RetrieveAPIView):
     # permission_classes   = []
     # authentication_classes = []
@@ -133,7 +146,7 @@ class CourseDetailAPIView(mixins.DestroyModelMixin,
 ################################################### Section
 
 
-class SectionAPIView(mixins.CreateModelMixin,
+class SectionAPIView(rest_mixins.CreateModelMixin,
                      ListAPIView):
     # permission_classes   = [permissions.IsAuthenticatedOrReadOnly]
     # authentication_classes = [SessionAuthentication]
@@ -147,9 +160,9 @@ class SectionAPIView(mixins.CreateModelMixin,
             name=self.kwargs['course_name']).first().section_set.all()
 
 
-class SectionDetailAPIView(mixins.DestroyModelMixin,
-                           mixins.UpdateModelMixin,
-                           mixins.CreateModelMixin,
+class SectionDetailAPIView(rest_mixins.DestroyModelMixin,
+                           rest_mixins.UpdateModelMixin,
+                           rest_mixins.CreateModelMixin,
                            generics.RetrieveAPIView):
     # permission_classes   = []
     # authentication_classes = []
@@ -168,7 +181,7 @@ class SectionDetailAPIView(mixins.DestroyModelMixin,
 ################################################### Department
 
 
-class DocumentAPIView(mixins.CreateModelMixin, ListAPIView):
+class DocumentAPIView(rest_mixins.CreateModelMixin, ListAPIView):
     # permission_classes   = [permissions.IsAuthenticatedOrReadOnly]
     # authentication_classes = [SessionAuthentication]
     serializer_class = DocumentSerializer
@@ -184,9 +197,9 @@ class DocumentAPIView(mixins.CreateModelMixin, ListAPIView):
         return self.create(request, *args, **kwargs)
 
 
-class DocumentDetailAPIView(mixins.DestroyModelMixin,
-                            mixins.UpdateModelMixin,
-                            mixins.CreateModelMixin,
+class DocumentDetailAPIView(rest_mixins.DestroyModelMixin,
+                            rest_mixins.UpdateModelMixin,
+                            rest_mixins.CreateModelMixin,
                             generics.RetrieveAPIView):
     # permission_classes   = [permissions.IsAuthenticatedOrReadOnly]
     # authentication_classes = [SessionAuthentication]
@@ -215,7 +228,7 @@ class DocumentDetailAPIView(mixins.DestroyModelMixin,
 ################################################### Message
 
 
-class MessageAPIView(mixins.CreateModelMixin, ListAPIView):
+class MessageAPIView(rest_mixins.CreateModelMixin, ListAPIView):
     # permission_classes   = [permissions.IsAuthenticatedOrReadOnly]
     # authentication_classes = [SessionAuthentication]
     serializer_class = MessageSerializer
@@ -231,9 +244,9 @@ class MessageAPIView(mixins.CreateModelMixin, ListAPIView):
         return self.create(request, *args, **kwargs)
 
 
-class MessageDetailAPIView(mixins.DestroyModelMixin,
-                           mixins.UpdateModelMixin,
-                           mixins.CreateModelMixin,
+class MessageDetailAPIView(rest_mixins.DestroyModelMixin,
+                           rest_mixins.UpdateModelMixin,
+                           rest_mixins.CreateModelMixin,
                            generics.RetrieveAPIView):
     # permission_classes   = []
     # authentication_classes = []
@@ -260,7 +273,7 @@ class MessageDetailAPIView(mixins.DestroyModelMixin,
 
 ################################################### Video
 
-class VideoAPIView(mixins.CreateModelMixin, ListAPIView):
+class VideoAPIView(rest_mixins.CreateModelMixin, ListAPIView):
     # permission_classes   = [permissions.IsAuthenticatedOrReadOnly]
     # authentication_classes = [SessionAuthentication]
     serializer_class = VideoSerializer
@@ -276,9 +289,9 @@ class VideoAPIView(mixins.CreateModelMixin, ListAPIView):
         return self.create(request, *args, **kwargs)
 
 
-class VideoDetailView(mixins.DestroyModelMixin,
-                      mixins.UpdateModelMixin,
-                      mixins.CreateModelMixin,
+class VideoDetailView(rest_mixins.DestroyModelMixin,
+                      rest_mixins.UpdateModelMixin,
+                      rest_mixins.CreateModelMixin,
                       generics.RetrieveAPIView):
     # permission_classes   = []
     # authentication_classes = []
@@ -299,7 +312,7 @@ class VideoDetailView(mixins.DestroyModelMixin,
 ################################################### Homework
 
 
-class HomeworkAPIView(mixins.CreateModelMixin, ListAPIView):
+class HomeworkAPIView(rest_mixins.CreateModelMixin, ListAPIView):
     # permission_classes   = [permissions.IsAuthenticatedOrReadOnly]
     # authentication_classes = [SessionAuthentication]
     serializer_class = HomeworkSerializer
@@ -315,9 +328,9 @@ class HomeworkAPIView(mixins.CreateModelMixin, ListAPIView):
         return self.create(request, *args, **kwargs)
 
 
-class HomeworkDetailView(mixins.DestroyModelMixin,
-                         mixins.UpdateModelMixin,
-                         mixins.CreateModelMixin,
+class HomeworkDetailView(rest_mixins.DestroyModelMixin,
+                         rest_mixins.UpdateModelMixin,
+                         rest_mixins.CreateModelMixin,
                          generics.RetrieveAPIView):
     # permission_classes   = []
     # authentication_classes = []
@@ -333,10 +346,20 @@ class HomeworkDetailView(mixins.DestroyModelMixin,
                                  .section_set.filter(id=self.kwargs['id']).first().homework_set.filter(
             id=self.kwargs['i']).distinct())
 
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+    def patch(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
+
+
 ################################################### Solution
 
 
-class SolutionAPIView(mixins.CreateModelMixin, ListAPIView):
+class SolutionAPIView(rest_mixins.CreateModelMixin, ListAPIView):
     # permission_classes   = [permissions.IsAuthenticatedOrReadOnly]
     # authentication_classes = [SessionAuthentication]
     serializer_class = SolutionSerializer
@@ -352,9 +375,9 @@ class SolutionAPIView(mixins.CreateModelMixin, ListAPIView):
         return self.create(request, *args, **kwargs)
 
 
-class SolutionDetailView(mixins.DestroyModelMixin,
-                         mixins.UpdateModelMixin,
-                         mixins.CreateModelMixin,
+class SolutionDetailView(rest_mixins.DestroyModelMixin,
+                         rest_mixins.UpdateModelMixin,
+                         rest_mixins.CreateModelMixin,
                          generics.RetrieveAPIView):
     # permission_classes   = []
     # authentication_classes = []

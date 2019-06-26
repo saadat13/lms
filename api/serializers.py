@@ -104,6 +104,7 @@ class DocumentSerializer(serializers.ModelSerializer):
         fields=[
             'id',
             'title',
+            'section',
             'file',
         ]
 
