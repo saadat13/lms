@@ -20,6 +20,6 @@ urlpatterns = [
     path('colleges/<college_name>/departments/<dep_name>/courses/<course_name>/sections/<id>/hws/<i>/', views.HomeworkDetailView.as_view()),
     path('colleges/<college_name>/departments/<dep_name>/courses/<course_name>/sections/<id>/sls/<i>/', views.SolutionAPIView.as_view()),
     path('colleges/<college_name>/departments/<dep_name>/courses/<course_name>/sections/<id>/sls/<i>/<si>/', views.SolutionDetailView.as_view()),
-    path('dl/', views.download), # download file using posting file path to server
+    path('dl/', views.download) # download file using posting file path to server
 
 ]

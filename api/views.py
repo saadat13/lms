@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
-from rest_framework import mixins as rest_mixins , generics
+from rest_framework import mixins as rest_mixins, generics, viewsets
 # from . import mixins
 from rest_framework.generics import ListAPIView
 import magic
@@ -51,7 +51,7 @@ def download(request):
 
 
 ################################################### College
-import pickle
+
 
 class CollegeAPIView(rest_mixins.CreateModelMixin,
                      ListAPIView):
@@ -60,13 +60,10 @@ class CollegeAPIView(rest_mixins.CreateModelMixin,
     serializer_class = CollegeSerializer
     queryset         = College.objects.all()
 
-    # def list(self, request, *args, **kwargs):
-    #     # Note the use of `get_queryset()` instead of `self.queryset`
-    #     colleges = list(College.objects.all())
-    #     print(pickle.loads())
-    #     # college_json = {"colleges":colleges}
-    #     # print(college_json)
-    #     return HttpResponse(colleges)
+    def list(self, *args, **kwargs):
+        queryset = College.objects.all()
+        serializer = CollegeSerializer(queryset, many=True)
+        return JsonResponse({'colleges':serializer.data})
 
 
 class CollegeDetailAPIView(rest_mixins.DestroyModelMixin,
@@ -81,7 +78,13 @@ class CollegeDetailAPIView(rest_mixins.DestroyModelMixin,
 
     def get_object(self):
         q = College.objects.filter(college_name=self.kwargs['college_name']).distinct()
-        return get_object_or_404(q)
+        return q
+
+    def retrieve(self, *args, **kwargs):
+        queryset = self.get_object()
+        college = get_object_or_404(queryset)
+        serializer = CollegeSerializer(college)
+        return JsonResponse({'colleges': serializer.data})
 
 ################################################### Department
 
@@ -94,10 +97,12 @@ class DepartmentAPIView(rest_mixins.CreateModelMixin,
     queryset         = Department.objects.all()
 
     def get_queryset(self):
-        try:
-            return College.objects.filter(college_name__iexact=self.kwargs['college_name']).first().department_set.all()
-        except Exception as e:
-            return JsonResponse({'error':str(e)})
+        return College.objects.filter(college_name__iexact=self.kwargs['college_name']).first().department_set.all()
+
+    def list(self,*args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = DepartmentSerializer(queryset, many=True)
+        return JsonResponse({'departments':serializer.data})
 
 
 class DepartmentDetailAPIView(rest_mixins.DestroyModelMixin,
@@ -111,7 +116,14 @@ class DepartmentDetailAPIView(rest_mixins.DestroyModelMixin,
     lookup_field     = 'dep_name'
 
     def get_object(self):
-        return get_object_or_404(College.objects.filter(college_name__iexact=self.kwargs['college_name']).first().department_set.filter(dep_name=self.kwargs['dep_name']).distinct())
+        return College.objects.filter(college_name__iexact=self.kwargs['college_name']).first().department_set.filter(dep_name=self.kwargs['dep_name']).distinct()
+
+    def retrieve(self, *args, **kwargs):
+        queryset = self.get_object()
+        dep = get_object_or_404(queryset)
+        serializer = DepartmentSerializer(dep)
+        return JsonResponse({'departments': serializer.data})
+
 
 ################################################### Course
 
@@ -128,6 +140,11 @@ class CourseAPIView(rest_mixins.CreateModelMixin,
         return College.objects.filter(college_name__iexact=self.kwargs['college_name']) \
             .first().department_set.filter(dep_name=self.kwargs['dep_name']).first().course_set.all()
 
+    def list(self, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = CourseSerializer(queryset, many=True)
+        return JsonResponse({'courses': serializer.data})
+
 
 class CourseDetailAPIView(rest_mixins.DestroyModelMixin,
                           rest_mixins.UpdateModelMixin,
@@ -140,8 +157,16 @@ class CourseDetailAPIView(rest_mixins.DestroyModelMixin,
     lookup_field     = 'course_name'
 
     def get_object(self):
-        return get_object_or_404(College.objects.filter(college_name__iexact=self.kwargs['college_name']) \
-                                 .first().department_set.filter(dep_name=self.kwargs['dep_name']).first().course_set.all().filter(name=self.kwargs['course_name']).distinct())
+        return College.objects.filter(college_name__iexact=self.kwargs['college_name']) \
+            .first().department_set.filter(dep_name=self.kwargs['dep_name']).first().course_set.all().filter(name=self.kwargs['course_name']).distinct()
+
+    def retrieve(self, *args, **kwargs):
+        queryset = self.get_object()
+        course = get_object_or_404(queryset)
+        serializer = CourseSerializer(course)
+        return JsonResponse({'courses': serializer.data})
+
+
     #
 ################################################### Section
 
@@ -159,6 +184,11 @@ class SectionAPIView(rest_mixins.CreateModelMixin,
             dep_name=self.kwargs['dep_name']).first().course_set.all().filter(
             name=self.kwargs['course_name']).first().section_set.all()
 
+    def list(self, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = SectionSerializer(queryset, many=True)
+        return JsonResponse({'sections': serializer.data})
+
 
 class SectionDetailAPIView(rest_mixins.DestroyModelMixin,
                            rest_mixins.UpdateModelMixin,
@@ -171,9 +201,15 @@ class SectionDetailAPIView(rest_mixins.DestroyModelMixin,
     lookup_field     = 'id'
 
     def get_object(self):
-        return get_object_or_404(College.objects.filter(college_name__iexact=self.kwargs['college_name']) \
-                                 .first().department_set.filter(dep_name=self.kwargs['dep_name']).first().course_set.all().filter(
-            name=self.kwargs['course_name']).first().section_set.filter(id=self.kwargs['id']).distinct())
+        return College.objects.filter(college_name__iexact=self.kwargs['college_name']) \
+            .first().department_set.filter(dep_name=self.kwargs['dep_name']).first().course_set.all().filter(
+            name=self.kwargs['course_name']).first().section_set.filter(id=self.kwargs['id']).distinct()
+
+    def retrieve(self, *args, **kwargs):
+        queryset = self.get_object()
+        section = get_object_or_404(queryset)
+        serializer = SectionSerializer(section)
+        return JsonResponse({'sections': serializer.data})
 
 
 
@@ -193,6 +229,11 @@ class DocumentAPIView(rest_mixins.CreateModelMixin, ListAPIView):
             name=self.kwargs['course_name']).first() \
             .section_set.filter(id=self.kwargs['id']).first().document_set.all()
 
+    def list(self, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = DocumentSerializer(queryset, many=True)
+        return JsonResponse({'documents': serializer.data})
+
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
@@ -207,10 +248,16 @@ class DocumentDetailAPIView(rest_mixins.DestroyModelMixin,
     queryset = Document.objects.all()
 
     def get_object(self):
-        return get_object_or_404(College.objects.filter(college_name__iexact=self.kwargs['college_name']) \
-                                 .first().department_set.filter(dep_name=self.kwargs['dep_name']).first().course_set.all().filter(
-            name=self.kwargs['course_name']).first()
-                                 .section_set.filter(id=self.kwargs['id']).first().document_set.filter(id=self.kwargs['i']).distinct())
+        return College.objects.filter(college_name__iexact=self.kwargs['college_name']) \
+            .first().department_set.filter(dep_name=self.kwargs['dep_name']).first().course_set.all().filter(
+            name=self.kwargs['course_name']).first() \
+            .section_set.filter(id=self.kwargs['id']).first().document_set.filter(id=self.kwargs['i']).distinct()
+
+    def retrieve(self, *args, **kwargs):
+        queryset = self.get_object()
+        doc = get_object_or_404(queryset)
+        serializer = DocumentSerializer(doc)
+        return JsonResponse({'documents': serializer.data})
 
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
@@ -240,6 +287,11 @@ class MessageAPIView(rest_mixins.CreateModelMixin, ListAPIView):
             name=self.kwargs['course_name']).first() \
             .section_set.filter(id=self.kwargs['id']).first().message_set.all()
 
+    def list(self, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = MessageSerializer(queryset, many=True)
+        return JsonResponse({'messages': serializer.data})
+
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
@@ -255,11 +307,17 @@ class MessageDetailAPIView(rest_mixins.DestroyModelMixin,
     lookup_field = 'i'
 
     def get_object(self):
-        return get_object_or_404(College.objects.filter(college_name__iexact=self.kwargs['college_name']) \
-                                 .first().department_set.filter(
+        return College.objects.filter(college_name__iexact=self.kwargs['college_name']) \
+            .first().department_set.filter(
             dep_name=self.kwargs['dep_name']).first().course_set.all().filter(
             name=self.kwargs['course_name']).first().section_set.filter(id=self.kwargs['id']).first().message_set.filter(
-            id=self.kwargs['i']).first())
+            id=self.kwargs['i']).distinct()
+
+    def retrieve(self, *args, **kwargs):
+        queryset = self.get_object()
+        msg = get_object_or_404(queryset)
+        serializer = MessageSerializer(msg)
+        return JsonResponse({'messages': serializer.data})
 
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
@@ -288,6 +346,11 @@ class VideoAPIView(rest_mixins.CreateModelMixin, ListAPIView):
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
+    def list(self, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = VideoSerializer(queryset, many=True)
+        return JsonResponse({'videos': serializer.data})
+
 
 class VideoDetailView(rest_mixins.DestroyModelMixin,
                       rest_mixins.UpdateModelMixin,
@@ -300,13 +363,17 @@ class VideoDetailView(rest_mixins.DestroyModelMixin,
     lookup_field = 'i'
 
     def get_object(self):
-        return get_object_or_404(College.objects.filter(college_name__iexact=self.kwargs['college_name']) \
-                                 .first().department_set.filter(
+        return College.objects.filter(college_name__iexact=self.kwargs['college_name']) \
+            .first().department_set.filter(
             dep_name=self.kwargs['dep_name']).first().course_set.all().filter(
-            name=self.kwargs['course_name']).first()
-                                 .section_set.filter(id=self.kwargs['id']).first().video_set.filter(
-            id=self.kwargs['i']).distinct())
+            name=self.kwargs['course_name']).first() \
+            .section_set.filter(id=self.kwargs['id']).first().video_set.filter(id=self.kwargs['i']).distinct()
 
+    def retrieve(self, *args, **kwargs):
+        queryset = self.get_object()
+        vid = get_object_or_404(queryset)
+        serializer = VideoSerializer(vid)
+        return JsonResponse({'videos': serializer.data})
 
 
 ################################################### Homework
@@ -327,6 +394,12 @@ class HomeworkAPIView(rest_mixins.CreateModelMixin, ListAPIView):
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
+    def list(self, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = HomeworkSerializer(queryset, many=True)
+        return JsonResponse({'homeworks': serializer.data})
+
+
 
 class HomeworkDetailView(rest_mixins.DestroyModelMixin,
                          rest_mixins.UpdateModelMixin,
@@ -339,12 +412,18 @@ class HomeworkDetailView(rest_mixins.DestroyModelMixin,
     lookup_field = 'i'
 
     def get_object(self):
-        return get_object_or_404(College.objects.filter(college_name__iexact=self.kwargs['college_name']) \
-                                 .first().department_set.filter(
+        return College.objects.filter(college_name__iexact=self.kwargs['college_name']) \
+            .first().department_set.filter(
             dep_name=self.kwargs['dep_name']).first().course_set.all().filter(
-            name=self.kwargs['course_name']).first()
-                                 .section_set.filter(id=self.kwargs['id']).first().homework_set.filter(
-            id=self.kwargs['i']).distinct())
+            name=self.kwargs['course_name']).first() \
+            .section_set.filter(id=self.kwargs['id']).first().homework_set.filter(
+            id=self.kwargs['i']).distinct()
+
+    def retrieve(self, *args, **kwargs):
+        queryset = self.get_object()
+        vid = get_object_or_404(queryset)
+        serializer = HomeworkSerializer(vid)
+        return JsonResponse({'homeworks': serializer.data})
 
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
@@ -371,6 +450,13 @@ class SolutionAPIView(rest_mixins.CreateModelMixin, ListAPIView):
             name=self.kwargs['course_name']).first() \
             .section_set.filter(id=self.kwargs['id']).first().homework_set.filter(id=self.kwargs['i']).first().solution_set.all()
 
+
+    def list(self, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = SolutionSerializer(queryset, many=True)
+        return JsonResponse({'solutions': serializer.data})
+
+
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
@@ -386,12 +472,18 @@ class SolutionDetailView(rest_mixins.DestroyModelMixin,
     lookup_field = 'si'
 
     def get_object(self):
-        return get_object_or_404(College.objects.filter(college_name__iexact=self.kwargs['college_name']) \
-                                 .first().department_set.filter(
+        return College.objects.filter(college_name__iexact=self.kwargs['college_name']) \
+            .first().department_set.filter(
             dep_name=self.kwargs['dep_name']).first().course_set.all().filter(
-            name=self.kwargs['course_name']).first()
-                                 .section_set.filter(id=self.kwargs['id']).first()
-                                 .homework_set.filter(id=self.kwargs['i']).first().solution_set.filter(id=self.kwargs['si']).distinct())
+            name=self.kwargs['course_name']).first()\
+        .section_set.filter(id=self.kwargs['id']).first()\
+        .homework_set.filter(id=self.kwargs['i']).first().solution_set.filter(id=self.kwargs['si']).distinct()
+
+    def retrieve(self, *args, **kwargs):
+        queryset = self.get_object()
+        vid = get_object_or_404(queryset)
+        serializer = SolutionSerializer(vid)
+        return JsonResponse({'solutions': serializer.data})
 
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)

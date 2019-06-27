@@ -1,15 +1,39 @@
+from abc import ABC
+
 from rest_framework import serializers
 
 from .models import Course, College, Department, Section, Solution, Homework, Document, Message, Video
 
 
+# class CollegeListSerializer(serializers.ListSerializer, ABC):
+#     class Meta:
+#         model = College
+#         fields = [
+#             'id',
+#             'college_name'
+#         ]
+#
+#     def to_representation(self, user):
+#         data = super().to_representation(user)  # the original data
+#         print(data)
+#         dic = {}
+#         for k in range(len(data)):
+#             dic['colleges'] = [{data.__getitem__(k)['id']: data.__getitem__(k) for i, j in data}]
+#         return dic
+#
+
+
+
 class CollegeSerializer(serializers.ModelSerializer):
     class Meta:
         model = College
+        # list_serializer_class = CollegeListSerializer
         fields = [
             'id',
             'college_name'
         ]
+
+
 
 
 class DepartmentSerializer(serializers.ModelSerializer):
