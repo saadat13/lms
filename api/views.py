@@ -9,6 +9,7 @@ from rest_framework import mixins as rest_mixins, generics, viewsets, permission
 from rest_framework.generics import ListAPIView
 import magic
 from django.core import serializers
+from itertools import chain
 
 from django.http import JsonResponse
 from rest_framework.permissions import IsAuthenticated
@@ -713,5 +714,31 @@ class SectionStudentsAPIView(rest_mixins.CreateModelMixin,
             queryset = self.get_queryset()
             serializer = StudentSerializer(queryset, many=True)
             return JsonResponse({'students': serializer.data})
+        else:
+            return JsonResponse({"error": "not authen!"})
+
+
+class AllDepSections(rest_mixins.CreateModelMixin,
+                             ListAPIView):
+    # permission_classes   = [permissions.IsAuthenticatedOrReadOnly]
+    # authentication_classes = [SessionAuthentication]
+    serializer_class = SectionSerializer
+    queryset = Section.objects.all()
+
+    def get_queryset(self):
+        qcourse = College.objects.filter(college_name=self.kwargs['college_name']) \
+            .first().department_set.filter(
+            dep_name=self.kwargs['dep_name']).first().course_set.all()
+        qlist = []
+        for i in list(qcourse):
+            qlist.append(i.section_set.all())
+        result_queryset = list(chain(*qlist))
+        return result_queryset
+
+    def list(self, *args, **kwargs):
+        if check_header(self.request):
+            queryset = self.get_queryset()
+            serializer = SectionSerializer(queryset, many=True)
+            return JsonResponse({'sections': serializer.data})
         else:
             return JsonResponse({"error": "not authen!"})

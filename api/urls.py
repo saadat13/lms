@@ -29,5 +29,5 @@ urlpatterns = [
     path('<student_id>/sections/', views.StudentSectionAPIView.as_view()),
     path('login/', login),
     path('colleges/<college_name>/departments/<dep_name>/courses/<course_name>/sections/<id>/enroll/', views.enrollSection),
-
+    path('colleges/<college_name>/departments/<dep_name>/sections/', views.AllDepSections.as_view()),
 ]
