@@ -26,14 +26,32 @@ def is_json(data):
     except ValueError:
         is_valid = False
     return is_valid
+#
+# @method_decorator(csrf_exempt)
+# def download(request):
+#     # if is_json(request.body):
+#     file_path = "%s/departments/%s/courses/%s/sections/%d/docs/%"
+#     try:
+#         strs = str(file_path).split("/")
+#         file_name = strs[len(strs)-1]
+#         mim = magic.Magic(mime=True)
+#         file_type = mim.from_file(file_path)
+#         if os.path.exists(file_path):
+#             with open(file_path, 'rb') as fh:
+#                 response = HttpResponse(fh.read(), content_type=file_type)
+#                 response['Content-Disposition'] = 'attachment; filename="%s"' % file_name
+#                 return response
+#         else:
+#             return HttpResponse("does not exists!")
+#     except Exception as e:
+#         return HttpResponse(str(e))
 
 
 @method_decorator(csrf_exempt)
-def download(request):
-    # if is_json(request.body):
-    req_dict = json.loads(request.body)
+def download(request, encoded_url):
+    # if is_json(request.body):id
+    file_path = encoded_url
     try:
-        file_path = req_dict['path']
         strs = str(file_path).split("/")
         file_name = strs[len(strs)-1]
         mim = magic.Magic(mime=True)
