@@ -17,6 +17,8 @@ pytz = "==2019.1"
 sqlparse = "==0.3.0"
 Django = "==2.2"
 Pillow = "==6.0.0"
+djangorestframework-jwt = "*"
+requests = "*"
 
 [requires]
 python_version = "3.6"

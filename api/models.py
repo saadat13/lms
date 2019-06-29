@@ -2,7 +2,8 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 import datetime
 import os
-
+# from .permission import group_user, setPermission
+from api.permission import group_user
 
 weekDays = (
     ("Sat", "Saturday"),
@@ -53,9 +54,15 @@ class User(AbstractUser):
     ssn = models.CharField(max_length=10)  # in iran max length of melli code without - is 10 digits
     email = models.EmailField()
     field = models.ForeignKey(Field, on_delete=models.CASCADE, null=True)
+    token = models.CharField(max_length=150, null=True, blank=True)
 
     def __str__(self):
         return "%s, %s" % (self.firstName, self.lastName)
+
+    @property
+    def get_role(self):
+        return self.roles.first().__str__()
+
 
 
 class College(models.Model):
@@ -107,9 +114,10 @@ class Section(models.Model):
     day2InWeek = models.CharField(max_length=20, choices=weekDays)
     startTime = models.CharField(max_length=20)
     endTime   = models.CharField(max_length=20)
+    enroll_key = models.CharField(max_length=20, null=True, blank=True)
 
     def __str__(self):
-        return self.course.name
+        return self.id.__str__()
 
 
 def upload_document_to(instance, name):

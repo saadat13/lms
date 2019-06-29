@@ -2,7 +2,7 @@ from abc import ABC
 
 from rest_framework import serializers
 
-from .models import Course, College, Department, Section, Solution, Homework, Document, Message, Video
+from .models import Course, College, Department, Section, Solution, Homework, Document, Message, Video, User
 
 
 # class CollegeListSerializer(serializers.ListSerializer, ABC):
@@ -23,7 +23,6 @@ from .models import Course, College, Department, Section, Solution, Homework, Do
 #
 
 
-
 class CollegeSerializer(serializers.ModelSerializer):
     class Meta:
         model = College
@@ -34,14 +33,30 @@ class CollegeSerializer(serializers.ModelSerializer):
         ]
 
 
-
-
 class DepartmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Department
         fields = [
             'id',
             'dep_name'
+        ]
+
+class StudentSerializer(serializers.ModelSerializer):
+    field_name = serializers.SerializerMethodField(read_only=True)
+
+    @staticmethod
+    def get_field_name(obj):
+        # obj is model instance
+        return obj.field.name
+
+    class Meta:
+        model = User
+        fields = [
+            'id',
+            'firstName',
+            'lastName',
+            'email',
+            'field_name'
         ]
 
 

@@ -3,6 +3,8 @@
 import os
 import sys
 
+# from api.permission import setPermission
+
 
 def main():
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'lms.settings')
