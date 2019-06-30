@@ -1,26 +1,15 @@
 import jwt
-from django.contrib.auth import authenticate, user_logged_in
-from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import mixins as rest_mixins, generics, viewsets, permissions, status
-# from . import mixins
 from rest_framework.generics import ListAPIView
 import magic
-from django.core import serializers
 from itertools import chain
 
 from django.http import JsonResponse
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.views import APIView
 from rest_framework_jwt.serializers import jwt_payload_handler
-from rest_framework_jwt.utils import jwt_encode_handler
-from rest_framework_jwt.views import jwt_response_payload_handler
-
-# from api.permission import group_user
-from api.authen import CustomAuthentication
+from lms.settings import SECRET_KEY
 from .serializers import CourseSerializer, CollegeSerializer, DepartmentSerializer, SectionSerializer, \
     SolutionSerializer, HomeworkSerializer, DocumentSerializer, VideoSerializer, MessageSerializer, StudentSerializer
 from .models import Course, College, Department, Section, Solution, Document, Video, Homework, Message, User
@@ -64,12 +53,12 @@ def login(request, *args, **kwargs):
     try:
         json_data = json.loads(request.body)
         username = json_data['id']
-        password = json_data['password']
-        user = User.objects.filter(id=username, password=password).first()
+        password = json_data['email']
+        user = User.objects.filter(id=username, email=password).first()
         if user:
             try:
                 # user = authenticate(username = username, password = password)
-                secret_key = "strange secret key"
+                secret_key = SECRET_KEY
                 payload = jwt_payload_handler(user)
                 token = jwt.encode(payload, secret_key, algorithm='HS256').decode('utf-8')
                 id = user.id
@@ -86,7 +75,7 @@ def login(request, *args, **kwargs):
             except Exception as e:
                 raise e
         else:
-            return JsonResponse({'error': 'Some error'}, status=401)
+            return JsonResponse({'error': 'user doesnt exist'}, status=401)
     except KeyError:
         return JsonResponse({'error': 'Some keyerror'}, status=401)
 
